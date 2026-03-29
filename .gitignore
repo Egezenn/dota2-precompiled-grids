@@ -1,0 +1,4 @@
+d2grid/
+.env
+settings_generated.json
+/hero_grid_config.json
