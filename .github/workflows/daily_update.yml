@@ -2,7 +2,7 @@ name: Daily Hero Grid Update
 
 on:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: "0 0 * * *"
   workflow_dispatch:
 
 permissions:
@@ -25,13 +25,12 @@ jobs:
         with:
           python-version-file: "pyproject.toml"
 
-      - name: Install dependencies
-        run: uv sync
-
       - name: Run generator
         env:
           STRATZ_API_KEY: ${{ secrets.STRATZ_API_KEY }}
-        run: uv run python compile.py
+        run: |
+          uv sync
+          uv run python compile.py
 
       - name: Get current date
         id: date
@@ -41,7 +40,7 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Auto-update hero grid - ${{ steps.date.outputs.date }}"
-          file_pattern: 'docs/hero_grid_config.json'
+          file_pattern: "docs/hero_grid_config.json"
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
