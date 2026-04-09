@@ -50,9 +50,11 @@ def compile():
     print(f"Generated {temp_settings} with API key.")
 
     # Run d2grid
-    result = subprocess.run(["uv", "run", "d2grid", temp_settings], capture_output=True, text=True)
+    print(f"Running generator for {temp_settings}...")
+    result = subprocess.run(["uvx", "d2grid", temp_settings], capture_output=True, text=True)
 
-    print(result.stdout)
+    if result.stdout:
+        print(result.stdout)
     if result.stderr:
         print(result.stderr, file=sys.stderr)
 
@@ -62,10 +64,13 @@ def compile():
         output_file = "hero_grid_config.json"
         if os.path.exists(output_file):
             shutil.copy2(output_file, os.path.join("docs", output_file))
-            print(f"Updated docs/{output_file}")
+            print(f"Successfully updated docs/{output_file}")
         else:
             print(f"Error: {output_file} not found after generation", file=sys.stderr)
             sys.exit(1)
+    else:
+        print(f"Error: d2grid failed with return code {result.returncode}", file=sys.stderr)
+        sys.exit(result.returncode)
 
     os.remove(temp_settings)
 
