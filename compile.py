@@ -20,6 +20,36 @@ def get_all_hero_ids():
         return []
 
 
+def fetch_spectral_data():
+    """Fetch positional data from spectral.gg with a browser User-Agent."""
+    url = "https://stats.spectral.gg/lrg2/api/?mod=heroes-positions&cat=ranked_patches&latest="
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+    try:
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req) as response:
+            data = json.loads(response.read().decode("utf-8"))
+            result = data.get("result", {})
+            # Map P1..P5 to their internal IDs
+            mapping = {
+                "P1": "1.1",
+                "P2": "1.2",
+                "P3": "1.3",
+                "P4": "0.1",
+                "P5": "0.3"
+            }
+            processed = {}
+            for pos, key in mapping.items():
+                pos_data = result.get(key, {})
+                # Heroes are already sorted by rank in the dict keys
+                processed[pos] = [int(h_id) for h_id in pos_data.keys()]
+            return processed
+    except Exception as e:
+        print(f"Warning: Failed to fetch spectral data: {e}")
+        return {}
+
+
 def compile():
     load_dotenv()
 
@@ -41,6 +71,19 @@ def compile():
                 if cat["name"] == "All Heroes":
                     cat["source"] = "inline"
                     cat["param"] = all_heroes
+
+    # Dynamically inject Spectral data
+    spectral_data = fetch_spectral_data()
+    if spectral_data:
+        for config in settings["configs"]:
+            for cat in config["categories"]:
+                if cat.get("source") == "spectral":
+                    pos = cat["param"].get("position")
+                    top = cat["param"].get("top", 12)
+                    if pos in spectral_data:
+                        cat["source"] = "inline"
+                        cat["param"] = spectral_data[pos][:top]
+                        print(f"Injected Spectral {pos} (top {top}) as inline source.")
 
     # Save to a temporary file
     temp_settings = "settings_generated.json"
