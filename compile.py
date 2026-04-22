@@ -32,13 +32,7 @@ def fetch_spectral_data():
             data = json.loads(response.read().decode("utf-8"))
             result = data.get("result", {})
             # Map P1..P5 to their internal IDs
-            mapping = {
-                "P1": "1.1",
-                "P2": "1.2",
-                "P3": "1.3",
-                "P4": "0.1",
-                "P5": "0.3"
-            }
+            mapping = {"P1": "1.1", "P2": "1.2", "P3": "1.3", "P4": "0.1", "P5": "0.3"}
             processed = {}
             for pos, key in mapping.items():
                 pos_data = result.get(key, {})
@@ -47,6 +41,35 @@ def fetch_spectral_data():
             return processed
     except Exception as e:
         print(f"Warning: Failed to fetch spectral data: {e}")
+        # Fallback to existing config in docs/
+        try:
+            config_path = os.path.join("docs", "hero_grid_config.json")
+            if os.path.exists(config_path):
+                with open(config_path, "r") as f:
+                    old_config = json.load(f)
+
+                # Look for Spectral config
+                spectral_config = next(
+                    (c for c in old_config.get("configs", []) if c.get("config_name") == "Spectral - League Meta"), None
+                )
+                if spectral_config:
+                    print(f"Using cached Spectral data from {config_path}")
+                    # Map category names back to positions
+                    name_to_pos = {
+                        "Safe Lane Core": "P1",
+                        "Mid Lane Core": "P2",
+                        "Off Lane Core": "P3",
+                        "Support (P4)": "P4",
+                        "Hard Support (P5)": "P5",
+                    }
+                    processed = {}
+                    for cat in spectral_config.get("categories", []):
+                        pos = name_to_pos.get(cat.get("category_name"))
+                        if pos:
+                            processed[pos] = cat.get("hero_ids", [])
+                    return processed
+        except Exception as fe:
+            print(f"Warning: Failed to load cached spectral data: {fe}")
         return {}
 
 
@@ -74,16 +97,24 @@ def compile():
 
     # Dynamically inject Spectral data
     spectral_data = fetch_spectral_data()
-    if spectral_data:
-        for config in settings["configs"]:
-            for cat in config["categories"]:
-                if cat.get("source") == "spectral":
-                    pos = cat["param"].get("position")
-                    top = cat["param"].get("top", 12)
-                    if pos in spectral_data:
-                        cat["source"] = "inline"
-                        cat["param"] = spectral_data[pos][:top]
-                        print(f"Injected Spectral {pos} (top {top}) as inline source.")
+    for config in settings["configs"]:
+        valid_categories = []
+        for cat in config["categories"]:
+            if cat.get("source") == "spectral":
+                pos = cat["param"].get("position")
+                top = cat["param"].get("top", 12)
+                if spectral_data and pos in spectral_data:
+                    cat["source"] = "inline"
+                    cat["param"] = spectral_data[pos][:top]
+                    print(f"Injected Spectral {pos} (top {top}) as inline source.")
+                    valid_categories.append(cat)
+                else:
+                    print(
+                        f"Warning: Removing category '{cat['name']}' from config '{config['name']}' as no Spectral data is available."
+                    )
+            else:
+                valid_categories.append(cat)
+        config["categories"] = valid_categories
 
     # Save to a temporary file
     temp_settings = "settings_generated.json"
