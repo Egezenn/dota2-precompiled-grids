@@ -41,6 +41,9 @@ jobs:
         with:
           commit_message: "Auto-update hero grid - ${{ steps.date.outputs.date }}"
           file_pattern: "docs/hero_grid_config.json"
+          commit_author: "github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
+          commit_user_name: "github-actions[bot]"
+          commit_user_email: "github-actions[bot]@users.noreply.github.com"
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -50,3 +53,13 @@ jobs:
           body: "Automated daily update of Dota 2 hero grids."
           files: docs/hero_grid_config.json
           make_latest: true
+
+      - name: Create Release (Codeberg)
+        uses: akkuman/gitea-release-action@v1
+        with:
+          server_url: https://codeberg.org
+          token: ${{ secrets.CODEBERG_TOKEN }}
+          tag_name: ${{ steps.date.outputs.date }}
+          name: Release ${{ steps.date.outputs.date }}
+          body: "Automated daily update of Dota 2 hero grids."
+          files: "docs/hero_grid_config.json"
