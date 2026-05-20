@@ -2,3 +2,6 @@ d2grid/
 .env
 settings_generated.json
 /hero_grid_config.json
+/docs/hero_grid_config.json
+/docs/node_modules/
+/docs/dist/

@@ -2,7 +2,6 @@ import os
 import json
 import sys
 import subprocess
-import shutil
 import urllib.request
 from dotenv import load_dotenv
 
@@ -43,14 +42,19 @@ def fetch_spectral_data():
         print(f"Warning: Failed to fetch spectral data: {e}")
         # Fallback to existing config in docs/
         try:
-            config_path = os.path.join("docs", "hero_grid_config.json")
+            config_path = os.path.join("hero_grid_config.json")
             if os.path.exists(config_path):
                 with open(config_path, "r") as f:
                     old_config = json.load(f)
 
                 # Look for Spectral config
                 spectral_config = next(
-                    (c for c in old_config.get("configs", []) if c.get("config_name") == "Spectral - League Meta"), None
+                    (
+                        c
+                        for c in old_config.get("configs", [])
+                        if c.get("config_name") == "Spectral - League Meta"
+                    ),
+                    None,
                 )
                 if spectral_config:
                     print(f"Using cached Spectral data from {config_path}")
@@ -125,25 +129,26 @@ def compile():
 
     # Run d2grid
     print(f"Running generator for {temp_settings}...")
-    result = subprocess.run(["uvx", "d2grid", temp_settings], capture_output=True, text=True)
+    result = subprocess.run(
+        ["uvx", "d2grid", temp_settings], capture_output=True, text=True
+    )
 
     if result.stdout:
         print(result.stdout)
     if result.stderr:
         print(result.stderr, file=sys.stderr)
 
-    # Sync to docs if successful
     if result.returncode == 0:
-        # Check if the output file exists before copying
         output_file = "hero_grid_config.json"
-        if os.path.exists(output_file):
-            shutil.copy2(output_file, os.path.join("docs", output_file))
-            print(f"Successfully updated docs/{output_file}")
-        else:
+        if not os.path.exists(output_file):
             print(f"Error: {output_file} not found after generation", file=sys.stderr)
             sys.exit(1)
+        print(f"Generated {output_file}")
     else:
-        print(f"Error: d2grid failed with return code {result.returncode}", file=sys.stderr)
+        print(
+            f"Error: d2grid failed with return code {result.returncode}",
+            file=sys.stderr,
+        )
         sys.exit(result.returncode)
 
     os.remove(temp_settings)
