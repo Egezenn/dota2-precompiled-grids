@@ -3,5 +3,6 @@ d2grid/
 settings_generated.json
 /hero_grid_config.json
 /docs/hero_grid_config.json
+/docs/public/hero_grid_config.json
 /docs/node_modules/
 /docs/dist/

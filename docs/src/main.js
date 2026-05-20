@@ -25,7 +25,7 @@ async function init() {
       };
     });
 
-    const configRes = await fetch('https://github.com/Egezenn/dota2-precompiled-grids/releases/latest/download/hero_grid_config.json');
+    const configRes = await fetch('./hero_grid_config.json');
     const configJson = await configRes.json();
 
     configJson.configs.forEach((config, index) => {
