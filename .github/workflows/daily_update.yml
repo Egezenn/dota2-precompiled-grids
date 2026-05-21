@@ -63,7 +63,7 @@ jobs:
           node-version: 22
 
       - name: Copy config into docs for Pages
-        run: cp hero_grid_config.json docs/hero_grid_config.json
+        run: cp hero_grid_config.json docs/public/hero_grid_config.json
 
       - name: Build docs site
         working-directory: docs
